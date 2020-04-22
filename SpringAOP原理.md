@@ -1,7 +1,7 @@
-#概要
+# 概要
 
 本文是从Spring AOP API的角度去阐述Spring AOP的一些“内涵”，抓住重点，结合一些Spring AOP API的实战例子，让我们可以更好更深入的了解它，碰到问题也可以得心应手的处理，写框架和中间件用到Spring AOP时也可以从容不迫。
-#通知
+# 通知
 
 在没有maven，手动copy jar包到classpath的年代，使用Spring AOP时可能会注意到一个叫aopalliance的jar包，这个jar包里定义了AOP的一些基础API，最重要的一个接口叫Advice（是一个标记接口），顾名思义，这就是AOP基本概念里的“通知”，而“通知”的职责是拦截目标方法并执行具体的切面逻辑，这个职责定义在了Advice的子接口MethodInterceptor中，现在来看下MethodInterceptor的方法签名：
 ```
@@ -78,7 +78,7 @@ public interface MethodMatcher {
 
 ```
 接口方法很直观，可以通过实现此接口来指定过滤目标Class的逻辑以及匹配目标Method的逻辑。都两者都可以匹配上，则切入当前方法，执行通知逻辑。比如我们可以使用AntPathMatcher（实现*.*.Test类似写法的实现工具类）来切入到一组package下的目标类的目标方法，实现切入，Spring AOP提供了很多三者的工具实现类，如正则表达式切点（JdkRegexpMethodPointcut）、AspectJ切点（AspectJExpressionPointcut）、事务切点（TransactionAttributeSourcePointcut）等等
-#通知+切点=？
+# 通知+切点=？
 将通知和切点整合在一起，就有了一个完整的切面，这个接口在Spring里叫Advisor
 ```
 public interface Advisor {
@@ -255,7 +255,7 @@ public interface AopProxy {
 }
 ```
 现在接着来说说代理对象，又有哪些”幺蛾子“在里面？
-#被代理过的对象
+# 被代理过的对象
 众所周知，spring aop有两种代理方式，Cglib与JDK Proxy，但被代理过的对象“偷偷地”实现了几个接口，拿JDK代理方式来举例，查看JdkDynamicAopProxy的getProxy方法可以发现一些端倪：
 ```
 final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializable {
@@ -293,14 +293,14 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 - Advised  
 代理对象实现的这个接口，我认为是Spring AOP的精华所在，他让我们在用Spring AOP时可以获得”肖申克的救赎“，也就是说，当我们对被代理过的对象不满意，我们可以有second chance，在对象已被代理的情况下无需进行二次代理来实现一些原始对象替换、切面管理等功能（一般情况下，最佳的位置是在BeanPostProcessor的实现方法里），首先我们来看这个接口定义了哪些方法（由于方法比较多，挑重点的说一下）  
     
-    ####配置被代理对象的原始对象  
+    #### 配置被代理对象的原始对象  
     可以对代理对象的原始对象进行”偷梁换柱“
     ```
         void setTargetSource(TargetSource targetSource);
 
         TargetSource getTargetSource();
     ```  
-    ####切面的管理
+    #### 切面的管理
     这里可以看出Spring AOP的强大，我们不仅可以直接（如AspectJ注解配置方式或`<aop:config>`标签配置方式）或间接（如Spring事务）配置切面，还可以在运行时拿到Spring AOP代理对象（一般是通过BeanPostProcessor或InitializingBean），将其强制转换为Advised对象，调用如下方法对切面进行动态的管理（如果想关闭这个特性，可以在创建ProxyFactory对象时，调用“setFrozen(true)”即可，此时会锁定代理对象当前的切面配置，不允许对其做变更）
     ```
         Advisor[] getAdvisors();
@@ -313,7 +313,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
     
         void removeAdvisor(int index) throws AopConfigException;
     ```
-    ####AOP基础配置
+    #### AOP基础配置
     在使用Spring AOP时，我们可以指定两个配置。即：`<aop:aspectj-autoproxy proxy-target-class="true" expose-proxy="true"/>`，这些配置会被指定给ProxyFactory（ProxyFactory也实现了Advised接口），当创建好代理对象后，这些配置又会被复制到被代理对象里：
     ```
         /**
@@ -340,7 +340,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 针对对象被多次代理过的场景，拿到代理对象的最终目标类型，此特性需要Spring最低版本为4.3或以上
 
 现在来深入看下被代理对象的被代理方法内部执行逻辑，探索代理对象和切面是怎么相互协作的。
-#切面与代理对象的协作
+# 切面与代理对象的协作
 
 还是拿Spring AOP JDK Proxy代理对象对应的InvocationHandler实现里的源码来说明（对应的Cglib实现类为CglibAopProxy）：
 ```
@@ -404,7 +404,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 }
 
 ```
-#总结
+# 总结
 
 最后，对Spring AOP进行一个小的总结，来看清它的本质。大致可以分为几步：
 - 注册切面到容器
@@ -449,7 +449,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 }
 ```
 看到这里，我们就对Spring AOP的本质有了一个清晰的认识。下面来讨论一下高级特性
-#高级特性
+# 高级特性
 
 - second chance
 
